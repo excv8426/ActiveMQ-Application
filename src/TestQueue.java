@@ -3,6 +3,7 @@ import javax.jms.ConnectionFactory;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
@@ -23,13 +24,14 @@ public class TestQueue {
 	// Destination ：消息的目的地;消息发送给谁.
 	private static Destination destination=null;
 	private static MessageProducer producer=null;
+	private static MessageConsumer consumer=null;
 	
 	public static void initSession(){
 		connectionFactory = new ActiveMQConnectionFactory(ActiveMQConnection.DEFAULT_USER,ActiveMQConnection.DEFAULT_PASSWORD,ACTIVEMQ_URL);
         try {
 			connection = connectionFactory.createConnection();
 	        connection.start();
-	        session = connection.createSession(true,Session.AUTO_ACKNOWLEDGE);
+	        session = connection.createSession(true,Session.CLIENT_ACKNOWLEDGE);
 		} catch (JMSException e) {
 			e.printStackTrace();
 		}
@@ -53,9 +55,21 @@ public class TestQueue {
 		}
     }
     
+    public static void receiveMessage(){
+    	try {
+			destination = session.createQueue("queue1");
+			consumer=session.createConsumer(destination);
+			consumer.setMessageListener(new FirstQueueListener());
+		} catch (JMSException e) {
+			e.printStackTrace();
+		}
+    }
+    
     public static void closeConnection(){
     	if (connection!=null) {
     		try {
+    			session.commit();
+    			session.close();
 				connection.close();
 			} catch (JMSException e) {
 				e.printStackTrace();
